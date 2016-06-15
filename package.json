@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/elmzteam/bydesign.git"
+    "url": "https://github.com/zwade/bydesign.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/elmzteam/bydesign/issues"
+    "url": "https://github.com/zwade/bydesign/issues"
   },
-  "homepage": "https://github.com/elmzteam/bydesign",
+  "homepage": "http://jsby.design",
   "scripts":
     {"postinstall": "/bin/sh bin/startup.sh $(pwd)",
      "start": "node index.js"},

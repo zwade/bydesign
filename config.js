@@ -11,10 +11,10 @@ module.exports = {
 		"dh4dt@virginia.edu",
 	],
 	rssInfo: {
-		title: "Down to the Wire",
-		description: "Technology and design only as serious as it needs to be",
-		site_url: "http://dttw.tech",
-		feed_url: "http://dttw.tech/rss",
+		title: "By Design",
+		description: "An open source blogging platform that's easy to use and easily extensible",
+		site_url: "http://jsby.design",
+		feed_url: "http://jsby.design/rss",
 		language: "en",
 	},
 	paths: {
@@ -25,6 +25,6 @@ module.exports = {
 	adminInfo: require("./users.js"),	
 	sidebar: [{
 		title: (new handlebars.SafeString("<a href='/about'>About</a>")),
-		content: "Down to the Wire is a blog about everything new in tech"
+		content: "JS By Design is a blogging platform for any use case"
 	}],
 }
