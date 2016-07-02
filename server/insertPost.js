@@ -8,10 +8,11 @@ var config   = require("../config")
 var shortid  = require("shortid")
 var utils    = require("./utils")
 var logger   = require("./logger")
+var mongojs  = require("mongojs")
 
 var prompt
 var globals  = {}
-globals.coll = undefined
+globals.db = undefined
 globals.path = undefined
 
 var getData = function() {
@@ -51,27 +52,33 @@ var getFile = function(data) {
 	})
 }
 
-var writeFile = function(data) {
+var saveFile = function(data) {
 	console.log(data.db.guid)
-	return denodeify(fs.writeFile, [path.join(config.paths.posts, data.db.guid+".md"), data.content.value], function() {
+	return denodeify(globals.db.docs.findAndModify, [{
+		query: {guid: data.db.guid},
+	        update: {$set: data.content},
+	        upsert: true,
+	        new: true
+	}], function(e) {
+		data.doc = mongojs.ObjectId(e._id)
 		return data
-	})
+	}, globals.db.docs)
 }
 
 var saveDatabase = function(data) {
 	data.db.tags = tagCheck(data.db.tags)	
-	return denodeify(globals.coll.insert, [data.db], undefined, globals.coll)
+	return denodeify(globals.db.posts.insert, [data.db], undefined, globals.db.posts)
 }
 
 var updateDatabase = function(data) {
 	data.db.tags = tagCheck(data.db.tags)	
-	return denodeify(globals.coll.update, [{guid: data.db.guid}, {$set: data.db}], undefined , globals.coll)
+	return denodeify(globals.db.posts.update, [{guid: data.db.guid}, {$set: data.db}], undefined , globals.posts.update)
 }
 
-var insertPost = function(data, coll, path, update) {
+var insertPost = function(data, db, path, update) {
 	globals.path = path
-	globals.coll = coll
-	return writeFile(data).then(function(val) {
+	globals.db = db
+	return saveFile(data).then(function(val) {
 		if (!update) {
 			return saveDatabase(val)
 		} else {
@@ -98,11 +105,11 @@ var denodeify = function(fn, args, alt, th) {
 }
 
 module.exports = function(db, path) {
-	return (function(coll, path) {
+	return (function(db, path) {
 		return function(data, update) {
-			return insertPost(data, coll, path, update).catch(crash)
+			return insertPost(data, db, path, update).catch(crash)
 		}
-	})(db.posts, path)
+	})(db, path)
 }
 
 var crash = function(a) {

@@ -58,10 +58,53 @@ upgradeFiles = () => {
 				})
 			}))
 		}
+		Promise.all(promises).then(() => migratePosts()).catch(console.error)
+	})
+}
+
+migratePosts = () => {
+	let promises = []
+	fs.readdir(__dirname+"/../posts", (e, data) => {
+		if (e) return resolve(console.error("Could not migrate", e))
+		for (let datum of data) {
+			let match = datum.match(/(.*)\.md/)
+			if (!match) {
+				console.log(`Skipping ${datum}`)
+				continue
+			}
+			promises.push(new Promise((resolve, reject) => {
+				db.posts.findOne({"guid": match[1]}, (e, post) => {
+					if (e || !post) return resolve( console.log("Could not retrieve: ", e || "No match"))
+					fs.readFile(__dirname+"/../posts/"+datum, (e, buff) => {
+						if (e) return resolve(console.log(`Could not read ${match}`, e))
+						var doc = {
+							data: buff.toString(),
+							guid: post.guid,
+						}
+						db.docs.findAndModify({
+							query: {guid: doc.guid}, 
+							update: {$set: doc}, 
+							upsert: true, 
+							new: true
+						}, (e, d) => {
+							if (e || !d) return resolve(console.log(`Could not insert ${match[1]}`))
+							post.doc = mongojs.ObjectId(d._id)
+							db.posts.save(post, (e, d) => {
+								console.log(`Migrating ${datum}`)	
+								resolve()
+							})
+						})
+					})
+				})
+			}))
+		}
 		Promise.all(promises).then(() => {
 			console.log("Done")
 			process.exit(0)
-		}).catch(console.error)
+		}).catch((e) => {
+			console.error(e)
+			process.exit(0)
+		})
 	})
 }
 

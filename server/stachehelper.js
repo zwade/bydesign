@@ -9,6 +9,7 @@ var RSS         = require("rss")
 var config      = require("../config")
 var logger      = require("./logger")
 var md          = require("./markdown")
+var mongojs     = require("mongojs")
 
 var POST_BREAK_REGEX = /\n\^{3,}\n/;
 
@@ -59,7 +60,17 @@ module.exports = function(handlebars, db, root) {
 	}
 
 	function getContent(id, cb) {
-		fs.readFile(path.join(config.paths.posts, id+".md"), cb)
+		let query;
+		//Definitely a mongo id
+		if (id.length == 12) {
+			query = {_id: mongojs.ObjectId(id)}
+		//Must by a guid, for cases in which we don't have access to the doc _id, and 
+		//it would be actually faster to query on guid
+		} else {
+			query = {guid: id}
+		}
+		console.log(query)
+		db.docs.find(query, (e,d) => {console.log(d); cb(e,d)})
 	}
 
 	function getSize(cb) {
@@ -78,7 +89,7 @@ module.exports = function(handlebars, db, root) {
 	})
 
 	handlebars.registerHelper("generateDesc", function(id) {
-		var out = md.render(deasync(getContent)(id).toString())
+		var out = md.render(deasync(getContent)(id).data.toString())
 					.split(POST_BREAK_REGEX)[0]
 					.replace(/(<.*?>)|(<.*?script.*?>.*?<\/script>)|(<.*?style.*?>.*?<\/style>)/g,"")
 					.replace(/[\n\t\ ]+/g," ")
@@ -97,7 +108,7 @@ module.exports = function(handlebars, db, root) {
 
 	//Database Access and Manipulation
 	handlebars.registerHelper("loadcontent", function(id, abbreviate) {
-		var out = deasync(getContent)(id)
+		var out = deasync(getContent)(id).data
 		if (out) {
 			out = out.toString()
 			if (abbreviate) {
@@ -116,7 +127,7 @@ module.exports = function(handlebars, db, root) {
 	})
 
 	handlebars.registerHelper("fetchcontent", function(id) {
-		var out = deasync(getContent)(id)
+		var out = deasync(getContent)(id).data
 		if (out) {
 			return out.toString().replace(POST_BREAK_REGEX, "")
 		} else {
@@ -153,7 +164,7 @@ module.exports = function(handlebars, db, root) {
 		for(var i = 0; i < posts.length; i++){
 			feed.item({
 				title: posts[i].title.text,
-				description: md.render(deasync(getContent)(posts[i].guid).toString()),
+				description: md.render(deasync(getContent)(posts[i].doc).data.toString()),
 				url: config.rssInfo.site_url + posts[i].title.url,
 				guid: posts[i].guid,
 				categories: posts[i].tags,

@@ -117,7 +117,7 @@ module.exports = function(__dirname) {
 				"visible": body.visible || false
 			},
 			"content": {
-				"value": body.content
+				"data": body.content
 			}
 		}
 
