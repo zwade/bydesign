@@ -53,14 +53,13 @@ var getFile = function(data) {
 }
 
 var saveFile = function(data) {
-	console.log(data.db.guid)
 	return denodeify(globals.db.docs.findAndModify, [{
 		query: {guid: data.db.guid},
 	        update: {$set: data.content},
 	        upsert: true,
 	        new: true
 	}], function(e) {
-		data.doc = mongojs.ObjectId(e._id)
+		data.db.doc = mongojs.ObjectId(e._id)
 		return data
 	}, globals.db.docs)
 }
@@ -72,7 +71,7 @@ var saveDatabase = function(data) {
 
 var updateDatabase = function(data) {
 	data.db.tags = tagCheck(data.db.tags)	
-	return denodeify(globals.db.posts.update, [{guid: data.db.guid}, {$set: data.db}], undefined , globals.posts.update)
+	return denodeify(globals.db.posts.update, [{guid: data.db.guid}, {$set: data.db}], undefined , globals.db.posts)
 }
 
 var insertPost = function(data, db, path, update) {

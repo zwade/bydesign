@@ -62,15 +62,17 @@ module.exports = function(handlebars, db, root) {
 	function getContent(id, cb) {
 		let query;
 		//Definitely a mongo id
-		if (id.length == 12) {
+		if (id instanceof mongojs.ObjectId) {
+			query = {_id: id}
+		//Almost assuredly a mongo id
+		} else if (id.length == 24) {
 			query = {_id: mongojs.ObjectId(id)}
 		//Must by a guid, for cases in which we don't have access to the doc _id, and 
 		//it would be actually faster to query on guid
 		} else {
 			query = {guid: id}
 		}
-		console.log(query)
-		db.docs.find(query, (e,d) => {console.log(d); cb(e,d)})
+		db.docs.find(query, (e,d) => cb(d.length ? e : "No data" ,d[0]))
 	}
 
 	function getSize(cb) {
